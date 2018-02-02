@@ -51,7 +51,8 @@ namespace l1t {
 	   layer1HOverE=39,
 	   PUTowerThreshold=40,
 	   tauTrimmingShapeVeto=41,
-	   NUM_CALOPARAMNODES=42
+	   hiFlag=42,
+	   NUM_CALOPARAMNODES=43
     };
 
     CaloParamsHelper() { pnode_.resize(NUM_CALOPARAMNODES); }
@@ -439,6 +440,12 @@ namespace l1t {
 
     std::vector<unsigned> layer1SecondStageLUT() { return pnode_[layer1HOverE].uparams_; }
     void setLayer1SecondStageLUT(const std::vector<unsigned>& lut) { pnode_[layer1HOverE].uparams_ = lut; }
+
+    unsigned getHIFlag() const { return pnode_[hiFlag].uparams_[0]; }
+    void setHIFlag(unsigned flag) {
+      pnode_[hiFlag].uparams_.resize(1);
+      pnode_[hiFlag].uparams_[0] = flag;
+    }
 
     void setNode(int pos, const Node &n){ pnode_[pos] = n; }
     const std::vector<Node>& getNodes(void) const { return pnode_; }
