@@ -15,6 +15,7 @@
 #include "TMath.h"
 
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <math.h>
 
@@ -62,6 +63,30 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::processEvent(const std::vector<l
   // jets accumulated sort
   accuSort(jets);
 
+  unsigned int pos = 0;
+  while(pos < jets.size()){
+    bool isGood = true;
+
+    l1t::Jet jet = jets.at(pos);
+
+    for(unsigned int i = pos+1; i < jets.size(); ++i){
+      if(jet.hwPt() < jets.at(i).hwPt()){
+	jets.at(pos) = jets.at(i);
+	jets.at(i) = jet;
+
+	isGood = false;
+	break;
+      }
+    }
+    
+    if(isGood) ++pos;
+  }
+
+  //  std::cout << "Jets after Stage2Layer2JetAlgorithmFirmwareImp1..." << std::endl;
+  for(unsigned int i = 0; i < jets.size(); ++i){
+    //    std::cout << " " << i << ": " << jets.at(i).hwPt() << ", " << jets.at(i).hwEta() << ", " << jets.at(i).hwPhi() << std::endl;
+  }
+
 }
 
 
@@ -70,6 +95,10 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 						       std::vector<l1t::Jet> & alljets, 
 						       std::string PUSubMethod) {
   
+  std::map<int, int> etaPUEstimate, etaPUN;
+  if(PUSubMethod == "PhiRingPP" || PUSubMethod == "PhiRingPPExclude" || PUSubMethod == "PhiRingPPTower") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers);
+
+
   // etaSide=1 is positive eta, etaSide=-1 is negative eta
   for (int etaSide=1; etaSide>=-1; etaSide-=2) {
     
@@ -97,6 +126,8 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	
 	int ieta = theRings.at(ringGroupIt-1).at(ringIt);
        
+	if(ieta == 28 || ieta == -28) continue;
+
 	// the jets in this ring
 	std::vector<l1t::Jet> jetsRing;
 	
@@ -111,6 +142,8 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	  
 	  int seedEt = tow.hwPt();
 	  int iEt = seedEt;
+	  if(PUSubMethod == "PhiRingPPTower" && etaPUN[ieta] > 0) iEt -= (int)(etaPUEstimate[ieta]/etaPUN[ieta]);
+
 	  bool vetoCandidate = false;
 	  
 	  // check it passes the seed threshold
@@ -123,6 +156,8 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	      int towEt = 0;
 	      int ietaTest = ieta+deta;
 	      int iphiTest = iphi+dphi;
+
+	      if(ietaTest == 28 || ietaTest == -28) continue;
 	      
 	      // wrap around phi
 	      while ( iphiTest > CaloTools::kHBHENrPhi ) iphiTest -= CaloTools::kHBHENrPhi;
@@ -135,7 +170,12 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	      // check jet mask and sum tower et
 	      const CaloTower& towTest = CaloTools::getTower(towers, CaloTools::caloEta(ietaTest), iphiTest);
 	      towEt = towTest.hwPt();
-	      
+
+	      if(PUSubMethod == "PhiRingPPTower"){
+		if(etaPUN[ietaTest] > 0) towEt -= (int)(etaPUEstimate[ietaTest]/etaPUN[ietaTest]);
+		if(towEt < 0) towEt = 0;
+	      }
+						    
               if      (mask_[8-(dphi+4)][deta+4] == 0) continue;
 	      else if (mask_[8-(dphi+4)][deta+4] == 1) vetoCandidate = (seedEt < towEt);
 	      else if (mask_[8-(dphi+4)][deta+4] == 2) vetoCandidate = (seedEt <= towEt);
@@ -146,7 +186,7 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	    }
 	    if(vetoCandidate) break; 
 	  }
-	  
+	
 	  // add the jet to the list
 	  if (!vetoCandidate) {
 
@@ -165,6 +205,16 @@ void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::create(const std::vector<l1t::Ca
 	      
 	      if (PUSubMethod == "ChunkyDonut"){
 		puEt = chunkyDonutPUEstimate(jet, 5, towers);
+		iEt -= puEt;
+	      }
+
+	      if(PUSubMethod == "PhiRingPP"){
+		puEt = applyPhiRingPUEstimate(etaPUEstimate, etaPUN, jet, iEt);
+		iEt -= puEt;
+	      }
+
+	      if(PUSubMethod == "PhiRingPPExclude"){
+		puEt = applyPhiRingPUEstimateExclude(etaPUEstimate, etaPUN, jet, iEt);
 		iEt -= puEt;
 	      }
 	    }
@@ -305,7 +355,7 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::donutPUEstimate(int jetEta,
     } else {
       towerEta=ieta;
     }
-    
+  
     const CaloTower& tow = CaloTools::getTower(towers, CaloTools::caloEta(towerEta), iphiUp);
     int towEt = tow.hwPt();
     ring[0]+=towEt;
@@ -429,6 +479,69 @@ int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet & 
   
 }
 
+
+void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers)
+{
+  for(int i = -41; i <= 41; ++i){
+    (*etaSum)[i] = 0;
+    (*etaN)[i] = 0;
+  }
+
+  for(unsigned int i = 0; i < towers.size(); ++i){
+    (*etaSum)[towers.at(i).hwEta()] += towers.at(i).hwPt();
+    (*etaN)[towers.at(i).hwEta()] += 1;
+  }
+
+  return;
+}
+
+
+int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::applyPhiRingPUEstimate(std::map<int, int> etaSum, std::map<int, int> etaN, l1t::Jet & jet, int iEt)
+{
+  int jetEta = jet.hwEta();
+  int etaRingSum = 0;
+  int etaRingN = 0;
+
+  //  std::cout << "Jet eta, pt: " << jetEta << ", " << iEt << std::endl;
+
+  for(int i = jetEta-4; i <= jetEta+4; ++i){
+    if(i == 28 || i == -28) continue;
+
+    etaRingSum += etaSum[i];
+    etaRingN += etaN[i];
+  }
+
+  //  std::cout << " ringSum, N: " << etaRingSum << ", " << etaRingN << std::endl;
+
+  etaRingSum *= 81;
+  etaRingSum /= etaRingN;
+  return etaRingSum;
+}
+
+
+int l1t::Stage2Layer2JetAlgorithmFirmwareImp1::applyPhiRingPUEstimateExclude(std::map<int, int> etaSum, std::map<int, int> etaN, l1t::Jet & jet, int iEt)
+{
+  int jetEta = jet.hwEta();
+  int etaRingSum = 0;
+  int etaRingN = 0;
+
+  //  std::cout << "Jet eta, pt: " << jetEta << ", " << iEt << std::endl;
+
+  for(int i = jetEta-4; i <= jetEta+4; ++i){
+    if(i == 28 || i == -28) continue;
+
+    etaRingSum += etaSum[i];
+    etaRingN += etaN[i];
+  }
+
+  //  std::cout << " ringSum, N: " << etaRingSum << ", " << etaRingN << std::endl;
+
+  etaRingSum -= iEt;
+
+  etaRingSum *= 81;
+  etaRingSum /= (etaRingN - 81);
+  return etaRingSum;
+}
 
 
 void l1t::Stage2Layer2JetAlgorithmFirmwareImp1::calibrate(std::vector<l1t::Jet> & jets, int calibThreshold, bool isAllJets) {

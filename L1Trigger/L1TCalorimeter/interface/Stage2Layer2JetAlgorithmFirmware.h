@@ -16,6 +16,8 @@
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2JetAlgorithm.h"
 #include "L1Trigger/L1TCalorimeter/interface/CaloParamsHelper.h"
 
+#include <map>
+
 namespace l1t {
 
   // Imp1 is for v1 and v2
@@ -41,6 +43,9 @@ namespace l1t {
 
     int chunkyDonutPUEstimate(Jet & jet, int pos,
                               const std::vector<l1t::CaloTower> & towers);
+    void phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers);
+    int applyPhiRingPUEstimate(const std::map<int, int> etaSum, const std::map<int, int> etaN, l1t::Jet & jet, int iEt);
+    int applyPhiRingPUEstimateExclude(const std::map<int, int> etaSum, const std::map<int, int> etaN, l1t::Jet & jet, int iEt);
 
   private:
 

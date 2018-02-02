@@ -26,7 +26,6 @@ using namespace std;
 l1t::Stage2MainProcessorFirmwareImp1::Stage2MainProcessorFirmwareImp1(unsigned fwv, CaloParamsHelper* params) :
   m_params(params)
 {
-
   m_towerAlgo = new Stage2TowerDecompressAlgorithmFirmwareImp1(m_params);
   m_egClusterAlgo = new Stage2Layer2ClusterAlgorithmFirmwareImp1(m_params,
 							       Stage2Layer2ClusterAlgorithmFirmwareImp1::ClusterInput::EH);
@@ -34,7 +33,7 @@ l1t::Stage2MainProcessorFirmwareImp1::Stage2MainProcessorFirmwareImp1(unsigned f
   m_tauClusterAlgo = new Stage2Layer2ClusterAlgorithmFirmwareImp1(m_params,
 								Stage2Layer2ClusterAlgorithmFirmwareImp1::ClusterInput::EH);
   m_tauAlgo = new Stage2Layer2TauAlgorithmFirmwareImp1(m_params);
-  m_jetAlgo = new Stage2Layer2JetAlgorithmFirmwareImp1(m_params);
+  if(!m_params->getHIFlag()) m_jetAlgo = new Stage2Layer2JetAlgorithmFirmwareImp1(m_params);
   m_sumAlgo = new Stage2Layer2EtSumAlgorithmFirmwareImp1(m_params);
   m_jetSumAlgo = new Stage2Layer2JetSumAlgorithmFirmwareImp1(m_params);
 
@@ -71,12 +70,15 @@ void l1t::Stage2MainProcessorFirmwareImp1::processEvent(const std::vector<l1t::C
   std::vector<l1t::EtSum> towerSums;
   std::vector<l1t::EtSum> jetSums;
 
+  
+
   m_towerAlgo->processEvent( inTowers, outTowers );
   m_egClusterAlgo->processEvent( outTowers, egClusters );
   m_egAlgo->processEvent( egClusters, outTowers, mpEGammas );
   m_tauClusterAlgo->processEvent( outTowers, tauClusters );
   m_tauAlgo->processEvent( tauClusters,outTowers, mpTaus );
-  m_jetAlgo->processEvent( outTowers, mpJets, mpAllJets );
+  if(!m_params->getHIFlag()) m_jetAlgo->processEvent( outTowers, mpJets, mpAllJets );
+
   m_sumAlgo->processEvent( outTowers, towerSums );
   m_jetSumAlgo->processEvent( mpAllJets, jetSums );
 
@@ -94,7 +96,6 @@ void l1t::Stage2MainProcessorFirmwareImp1::processEvent(const std::vector<l1t::C
   m_demuxTauAlgo->processEvent( mpTaus, taus );
   m_demuxJetAlgo->processEvent( mpJets, jets );
   m_demuxSumsAlgo->processEvent( mpSums, etSums );
-
 }
 
 
@@ -106,7 +107,7 @@ void l1t::Stage2MainProcessorFirmwareImp1::print(std::ostream& out) const {
   out << "  EG ID algo       : " << (m_egAlgo?1:0) << std::endl;
   out << "  Tau cluster algo : " << (m_tauClusterAlgo?1:0) << std::endl;
   out << "  Tau ID algo      : " << (m_tauAlgo?1:0) << std::endl;
-  out << "  Jet algo         : " << (m_jetAlgo?1:0) << std::endl;
+  if(!m_params->getHIFlag()) out << "  Jet algo         : " << (m_jetAlgo?1:0) << std::endl;
   out << "  Jet sum algo     : " << (m_jetSumAlgo?1:0) << std::endl;
   out << "  Sums algo        : " << (m_sumAlgo?1:0) << std::endl;
 
