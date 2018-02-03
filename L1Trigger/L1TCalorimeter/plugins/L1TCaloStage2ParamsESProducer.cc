@@ -347,6 +347,9 @@ L1TCaloStage2ParamsESProducer::L1TCaloStage2ParamsESProducer(const edm::Paramete
     m_params_helper.setLayer1SecondStageLUT(conf.getParameter<std::vector<unsigned>>("layer1SecondStageLUT"));
   }
 
+  m_params_helper.setHIFlag(conf.getParameter<unsigned>("hiFlag"));
+
+
   m_params = (CaloParams)m_params_helper;
 }
 
