@@ -19,6 +19,7 @@
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2EGammaAlgorithm.h"
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2TauAlgorithm.h"
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2JetAlgorithm.h"
+#include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2HIJetAlgorithm.h"
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2EtSumAlgorithm.h"
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2JetSumAlgorithm.h"
 #include "L1Trigger/L1TCalorimeter/interface/Stage2Layer2DemuxEGAlgoFirmware.h"
@@ -64,6 +65,7 @@ namespace l1t {
     Stage2Layer2ClusterAlgorithm* m_tauClusterAlgo;
     Stage2Layer2TauAlgorithm* m_tauAlgo;
     Stage2Layer2JetAlgorithm* m_jetAlgo;
+    Stage2Layer2HIJetAlgorithm* m_hiJetAlgo;
     Stage2Layer2EtSumAlgorithm* m_sumAlgo;
     Stage2Layer2JetSumAlgorithm* m_jetSumAlgo;
 
