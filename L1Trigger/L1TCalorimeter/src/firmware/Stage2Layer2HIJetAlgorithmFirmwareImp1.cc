@@ -94,8 +94,8 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 						       std::string PUSubMethod) {
   
   std::map<int, int> etaPUEstimate, etaPUN;
-  if(PUSubMethod == "PhiRingPP" || PUSubMethod == "PhiRingPPExclude" || PUSubMethod == "PhiRingPPTower") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers);
-
+  if(PUSubMethod == "PhiRingPP" || PUSubMethod == "PhiRingPPExclude" || PUSubMethod == "PhiRingPPTower") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers, false);
+  else if(PUSubMethod == "PhiRingHITower") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers, true);
 
   // etaSide=1 is positive eta, etaSide=-1 is negative eta
   for (int etaSide=1; etaSide>=-1; etaSide-=2) {
@@ -140,7 +140,9 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 	  
 	  int seedEt = tow.hwPt();
 	  int iEt = seedEt;
-	  if(PUSubMethod == "PhiRingPPTower" && etaPUN[ieta] > 0) iEt -= (int)(etaPUEstimate[ieta]/etaPUN[ieta]);
+	  if(etaPUN[ieta] > 0){
+	    if(PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingHITower") iEt -= (int)(etaPUEstimate[ieta]/etaPUN[ieta]);
+	  }
 
 	  bool vetoCandidate = false;
 	  
@@ -169,7 +171,7 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 	      const CaloTower& towTest = CaloTools::getTower(towers, CaloTools::caloEta(ietaTest), iphiTest);
 	      towEt = towTest.hwPt();
 
-	      if(PUSubMethod == "PhiRingPPTower"){
+	      if(PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingHITower"){
 		if(etaPUN[ietaTest] > 0) towEt -= (int)(etaPUEstimate[ietaTest]/etaPUN[ietaTest]);
 		if(towEt < 0) towEt = 0;
 	      }
@@ -475,7 +477,7 @@ int l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet 
 }
 
 
-void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers)
+void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers, bool doHI)
 {
   for(int i = -41; i <= 41; ++i){
     (*etaSum)[i] = 0;
@@ -485,6 +487,29 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int
   for(unsigned int i = 0; i < towers.size(); ++i){
     (*etaSum)[towers.at(i).hwEta()] += towers.at(i).hwPt();
     (*etaN)[towers.at(i).hwEta()] += 1;
+  }
+
+  if(doHI){
+    int reVal = (*etaSum)[-1] + (*etaSum)[1];
+    reVal /= 2;
+    (*etaSum)[-1] = reVal;
+    (*etaSum)[1] = reVal;
+
+    for(int i = -41; i < -1; ++i){
+      if(i%2 == 0) continue;
+      reVal = (*etaSum)[i] + (*etaSum)[i+1];
+      reVal /= 2;
+      (*etaSum)[i] = reVal;
+      (*etaSum)[i+1] = reVal;       
+    }
+
+    for(int i = 2; i < 41; ++i){
+      if(i%2 != 0) continue;
+      reVal = (*etaSum)[i] + (*etaSum)[i+1];
+      reVal /= 2;
+      (*etaSum)[i] = reVal;
+      (*etaSum)[i+1] = reVal;       
+    }
   }
 
   return;
