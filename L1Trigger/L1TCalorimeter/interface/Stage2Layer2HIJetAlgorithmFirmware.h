@@ -38,7 +38,7 @@ namespace l1t {
 
     int chunkyDonutPUEstimate(Jet & jet, int pos,
                               const std::vector<l1t::CaloTower> & towers);
-    void phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers, bool doHI);
+    void phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers, std::string algoStr);
     int applyPhiRingPUEstimate(const std::map<int, int> etaSum, const std::map<int, int> etaN, l1t::Jet & jet, int iEt);
     int applyPhiRingPUEstimateExclude(const std::map<int, int> etaSum, const std::map<int, int> etaN, l1t::Jet & jet, int iEt);
 
