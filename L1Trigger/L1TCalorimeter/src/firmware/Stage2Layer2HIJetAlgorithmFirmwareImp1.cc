@@ -94,8 +94,7 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 						       std::string PUSubMethod) {
   
   std::map<int, int> etaPUEstimate, etaPUN;
-  if(PUSubMethod == "PhiRingPP" || PUSubMethod == "PhiRingPPExclude" || PUSubMethod == "PhiRingPPTower") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers, false);
-  else if(PUSubMethod == "PhiRingHITower") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers, true);
+  if(PUSubMethod == "PhiRingPP" || PUSubMethod == "PhiRingPPExclude" || PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingPPTowerMask" || PUSubMethod == "PhiRingHITower" || PUSubMethod == "PhiRingHIRegion") phiRingPUEstimate(&etaPUEstimate, &etaPUN, towers, PUSubMethod);
 
   // etaSide=1 is positive eta, etaSide=-1 is negative eta
   for (int etaSide=1; etaSide>=-1; etaSide-=2) {
@@ -125,6 +124,11 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 	int ieta = theRings.at(ringGroupIt-1).at(ringIt);
        
 	if(ieta == 28 || ieta == -28) continue;
+	if(PUSubMethod == "PhiRingHITower" || PUSubMethod == "PhiRingHIRegion" || PUSubMethod == "PhiRingPPTowerMask"){
+	  if(ieta == 27 || ieta == -27) continue;
+	  else if(ieta == 26 || ieta == -26) continue;
+	  else if(ieta == 25 || ieta == -25) continue;	  
+	}
 
 	// the jets in this ring
 	std::vector<l1t::Jet> jetsRing;
@@ -141,7 +145,7 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 	  int seedEt = tow.hwPt();
 	  int iEt = seedEt;
 	  if(etaPUN[ieta] > 0){
-	    if(PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingHITower") iEt -= (int)(etaPUEstimate[ieta]/etaPUN[ieta]);
+	    if(PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingPPTowerMask"|| PUSubMethod == "PhiRingHITower" || PUSubMethod == "PhiRingHIRegion") iEt -= (int)(etaPUEstimate[ieta]/etaPUN[ieta]);
 	  }
 
 	  bool vetoCandidate = false;
@@ -158,6 +162,11 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 	      int iphiTest = iphi+dphi;
 
 	      if(ietaTest == 28 || ietaTest == -28) continue;
+	      if(PUSubMethod == "PhiRingHITower" || PUSubMethod == "PhiRingHIRegion" || PUSubMethod == "PhiRingPPTowerMask"){
+		if(ietaTest == 27 || ietaTest == -27) continue;
+		else if(ietaTest == 26 || ietaTest == -26) continue;
+		else if(ietaTest == 25 || ietaTest == -25) continue;	  
+	      }
 	      
 	      // wrap around phi
 	      while ( iphiTest > CaloTools::kHBHENrPhi ) iphiTest -= CaloTools::kHBHENrPhi;
@@ -171,7 +180,7 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::create(const std::vector<l1t::
 	      const CaloTower& towTest = CaloTools::getTower(towers, CaloTools::caloEta(ietaTest), iphiTest);
 	      towEt = towTest.hwPt();
 
-	      if(PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingHITower"){
+	      if(PUSubMethod == "PhiRingPPTower" || PUSubMethod == "PhiRingPPTowerMask" || PUSubMethod == "PhiRingHITower" || PUSubMethod == "PhiRingHIRegion"){
 		if(etaPUN[ietaTest] > 0) towEt -= (int)(etaPUEstimate[ietaTest]/etaPUN[ietaTest]);
 		if(towEt < 0) towEt = 0;
 	      }
@@ -289,8 +298,9 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::accuSort(std::vector<l1t::Jet>
       etaNegSorter.Merge( jetEtaNeg.at(ieta) , accumEtaNeg );
       
     }
- 
+
   //check for 6 & 7th jets with same et and eta. Keep jet with larger phi
+  
   if(accumEtaPos.at(6).hwPt()==accumEtaPos.at(5).hwPt() && accumEtaPos.at(6).hwEta()==accumEtaPos.at(5).hwEta()
      && accumEtaPos.at(6).hwPhi() > accumEtaPos.at(5).hwPhi()){
     accumEtaPos.at(5)=accumEtaPos.at(6);
@@ -299,11 +309,14 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::accuSort(std::vector<l1t::Jet>
      && accumEtaNeg.at(6).hwPhi() > accumEtaNeg.at(5).hwPhi()){
     accumEtaNeg.at(5)=accumEtaNeg.at(6);
   }
-
+  
   //truncate
   accumEtaPos.resize(6);
   accumEtaNeg.resize(6);
- 
+  //Rework for more jets
+  //  accumEtaPos.resize(24);
+  //  accumEtaNeg.resize(24);
+
   // put all 12 candidates in the original jet vector, removing zero energy ones
   jets.clear();
   for (l1t::Jet accjet : accumEtaPos)
@@ -477,7 +490,7 @@ int l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::chunkyDonutPUEstimate(l1t::Jet 
 }
 
 
-void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers, bool doHI)
+void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int, int>* etaSum, std::map<int, int>* etaN, const std::vector<l1t::CaloTower> & towers, std::string algoStr)
 {
   for(int i = -41; i <= 41; ++i){
     (*etaSum)[i] = 0;
@@ -489,26 +502,62 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::phiRingPUEstimate(std::map<int
     (*etaN)[towers.at(i).hwEta()] += 1;
   }
 
-  if(doHI){
+  if(algoStr == "PhiRingHITower" || algoStr == "PhiRingHIRegion"){
     int reVal = (*etaSum)[-1] + (*etaSum)[1];
     reVal /= 2;
     (*etaSum)[-1] = reVal;
     (*etaSum)[1] = reVal;
 
-    for(int i = -41; i < -1; ++i){
-      if(i%2 == 0) continue;
-      reVal = (*etaSum)[i] + (*etaSum)[i+1];
-      reVal /= 2;
-      (*etaSum)[i] = reVal;
-      (*etaSum)[i+1] = reVal;       
+    if(algoStr == "PhiRingHITower"){
+      for(int i = -41; i < -1; ++i){
+	if(i%2 == 0) continue;
+	reVal = (*etaSum)[i] + (*etaSum)[i+1];
+	reVal /= 2;
+	(*etaSum)[i] = reVal;
+	(*etaSum)[i+1] = reVal;       
+      }
+      
+      for(int i = 2; i < 41; ++i){
+	if(i%2 != 0) continue;
+	reVal = (*etaSum)[i] + (*etaSum)[i+1];
+	reVal /= 2;
+	(*etaSum)[i] = reVal;
+	(*etaSum)[i+1] = reVal;       
+      }
     }
+    else if(algoStr == "PhiRingHIRegion"){
+      int pos = 1;
+      reVal = 0;
+      for(int i = -41; i < -1; ++i){
+	reVal += (*etaSum)[i];
 
-    for(int i = 2; i < 41; ++i){
-      if(i%2 != 0) continue;
-      reVal = (*etaSum)[i] + (*etaSum)[i+1];
-      reVal /= 2;
-      (*etaSum)[i] = reVal;
-      (*etaSum)[i+1] = reVal;       
+	if(pos%4 == 0){
+	  reVal /= 4;
+	  (*etaSum)[i] = reVal;
+	  (*etaSum)[i-1] = reVal;
+	  (*etaSum)[i-2] = reVal;
+	  (*etaSum)[i-3] = reVal;
+
+	  reVal = 0;
+	}
+	pos++;
+      }
+
+      pos = 1;
+      reVal = 0;
+      for(int i = 2; i <= 42; ++i){
+	reVal += (*etaSum)[i];
+
+	if(pos%4 == 0){
+	  reVal /= 4;
+	  (*etaSum)[i] = reVal;
+	  (*etaSum)[i-1] = reVal;
+	  (*etaSum)[i-2] = reVal;
+	  (*etaSum)[i-3] = reVal;
+	  reVal = 0;
+	}
+	pos++;
+      }
     }
   }
 
