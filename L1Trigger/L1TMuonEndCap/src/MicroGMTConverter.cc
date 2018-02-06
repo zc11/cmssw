@@ -118,7 +118,7 @@ void sort_uGMT_muons(
   int emtfMaxProc = 11; // ME- sector 6
   
   // New collection, sorted by processor to match uGMT unpacked order
-  l1t::RegionalMuonCandBxCollection* sortedCands = new l1t::RegionalMuonCandBxCollection();
+  auto sortedCands = std::make_unique<l1t::RegionalMuonCandBxCollection>();
   sortedCands->clear();
   sortedCands->setBXRange(minBX, maxBX);
   for (int iBX = minBX; iBX <= maxBX; ++iBX) {
@@ -133,8 +133,8 @@ void sort_uGMT_muons(
   }
   
   // Return sorted collection
-  cands.clear();
-  cands = (*sortedCands);
+  std::swap(cands, *sortedCands);
+  sortedCands.reset();
 }
 
 } // End namespace emtf
