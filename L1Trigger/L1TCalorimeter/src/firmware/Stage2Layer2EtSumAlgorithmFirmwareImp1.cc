@@ -209,6 +209,9 @@ void l1t::Stage2Layer2EtSumAlgorithmFirmwareImp1::processEvent(const std::vector
     } 
     l1t::EtSum etSumMinBias0(p4,type0,mb0,0,0,0);
     l1t::EtSum etSumMinBias1(p4,type1,mb1,0,0,0);
+    
+    l1t::EtSum etSumTotalEtPos(p4,l1t::EtSum::EtSumType::kTotalEtPos,et,0,0,0);
+    l1t::EtSum etSumTotalEtNeg(p4,l1t::EtSum::EtSumType::kTotalEtNeg,et,0,0,0);
 
     etsums.push_back(etSumTotalEt);
     etsums.push_back(etSumEx);
@@ -222,6 +225,9 @@ void l1t::Stage2Layer2EtSumAlgorithmFirmwareImp1::processEvent(const std::vector
 
     etsums.push_back(etSumMinBias0);
     etsums.push_back(etSumMinBias1);
+      
+      if(etaSide>0) etsums.push_back(etSumTotalEtPos);
+      if(etaSide<0) etsums.push_back(etSumTotalEtNeg);
 
   }
 
@@ -230,3 +236,4 @@ void l1t::Stage2Layer2EtSumAlgorithmFirmwareImp1::processEvent(const std::vector
   etsums.push_back(etSumNtowers);
 
 }
+
