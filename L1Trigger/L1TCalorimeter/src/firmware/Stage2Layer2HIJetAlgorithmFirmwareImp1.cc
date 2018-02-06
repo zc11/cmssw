@@ -25,7 +25,7 @@
 
 
 namespace l1t {
-  inline bool operator > ( const l1t::Jet& a, l1t::Jet& b ) {
+  inline bool operator > ( const l1t::Jet& a, const l1t::Jet& b ) {
     return  a.hwPt() > b.hwPt();
   }
 }
@@ -276,12 +276,12 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::accuSort(std::vector<l1t::Jet>
   for (unsigned int iJet = 0; iJet < jets.size(); iJet++)
     {
       if(jets.at(iJet).hwEta() > 0){
-	if(jets.at(iJet).hwEta() < 25) jetEtaPosBar.at(jets.at(iJet).hwEta()-1).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
-	else jetEtaPosEnd.at(jets.at(iJet).hwEta()-1).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+	if(jets.at(iJet).hwEta() < 25) jetEtaPosBar.at(jets.at(iJet).hwEta()-1).at((72-jets.at(iJet).hwPhi())/4) = jets.at(iJet);
+	else jetEtaPosEnd.at(jets.at(iJet).hwEta()-1).at((72-jets.at(iJet).hwPhi())/4) = jets.at(iJet);
       }
       else{
-	if(jets.at(iJet).hwEta() > -25) jetEtaNegBar.at(-(jets.at(iJet).hwEta()+1)).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
-	else jetEtaNegEnd.at(-(jets.at(iJet).hwEta()+1)).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+	if(jets.at(iJet).hwEta() > -25) jetEtaNegBar.at(-(jets.at(iJet).hwEta()+1)).at((72-jets.at(iJet).hwPhi())/4) = jets.at(iJet);
+	else jetEtaNegEnd.at(-(jets.at(iJet).hwEta()+1)).at((72-jets.at(iJet).hwPhi())/4) = jets.at(iJet);
       }
     }
   
