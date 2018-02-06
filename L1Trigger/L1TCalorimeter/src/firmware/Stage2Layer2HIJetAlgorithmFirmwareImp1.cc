@@ -268,67 +268,112 @@ void l1t::Stage2Layer2HIJetAlgorithmFirmwareImp1::accuSort(std::vector<l1t::Jet>
 
   math::PtEtaPhiMLorentzVector emptyP4;
   l1t::Jet tempJet (emptyP4, 0, 0, 0, 0);
-  std::vector< std::vector<l1t::Jet> > jetEtaPos( 41 , std::vector<l1t::Jet>(18, tempJet));
-  std::vector< std::vector<l1t::Jet> > jetEtaNeg( 41 , std::vector<l1t::Jet>(18, tempJet));
-  
+  std::vector< std::vector<l1t::Jet> > jetEtaPosBar( 41 , std::vector<l1t::Jet>(18, tempJet));
+  std::vector< std::vector<l1t::Jet> > jetEtaPosEnd( 41 , std::vector<l1t::Jet>(18, tempJet));
+  std::vector< std::vector<l1t::Jet> > jetEtaNegBar( 41 , std::vector<l1t::Jet>(18, tempJet));
+  std::vector< std::vector<l1t::Jet> > jetEtaNegEnd( 41 , std::vector<l1t::Jet>(18, tempJet));
+
   for (unsigned int iJet = 0; iJet < jets.size(); iJet++)
     {
-      if (jets.at(iJet).hwEta() > 0) jetEtaPos.at(jets.at(iJet).hwEta()-1).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
-      else  jetEtaNeg.at(-(jets.at(iJet).hwEta()+1)).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+      if(jets.at(iJet).hwEta() > 0){
+	if(jets.at(iJet).hwEta() < 25) jetEtaPosBar.at(jets.at(iJet).hwEta()-1).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+	else jetEtaPosEnd.at(jets.at(iJet).hwEta()-1).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+      }
+      else{
+	if(jets.at(iJet).hwEta() > -25) jetEtaNegBar.at(-(jets.at(iJet).hwEta()+1)).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+	else jetEtaNegEnd.at(-(jets.at(iJet).hwEta()+1)).at((jets.at(iJet).hwPhi()-1)/4) = jets.at(iJet);
+      }
     }
   
-  AccumulatingSort <l1t::Jet> etaPosSorter(7);
-  AccumulatingSort <l1t::Jet> etaNegSorter(7);
-  std::vector<l1t::Jet> accumEtaPos;
-  std::vector<l1t::Jet> accumEtaNeg;
+  AccumulatingSort <l1t::Jet> etaPosSorterBar(4);
+  AccumulatingSort <l1t::Jet> etaPosSorterEnd(4);
+  AccumulatingSort <l1t::Jet> etaNegSorterBar(4);
+  AccumulatingSort <l1t::Jet> etaNegSorterEnd(4);
+  std::vector<l1t::Jet> accumEtaPosBar;
+  std::vector<l1t::Jet> accumEtaPosEnd;
+  std::vector<l1t::Jet> accumEtaNegBar;
+  std::vector<l1t::Jet> accumEtaNegEnd;
     
+
   for( int ieta = 0 ; ieta < 41 ; ++ieta)
     {
       // eta +
       std::vector<l1t::Jet>::iterator start2_, end2_;
-      start2_ = jetEtaPos.at(ieta).begin();  
-      end2_   = jetEtaPos.at(ieta).end();
-      BitonicSort<l1t::Jet>(down, start2_, end2_);
-      etaPosSorter.Merge( jetEtaPos.at(ieta) , accumEtaPos );
-      
-      // eta -
-      start2_ = jetEtaNeg.at(ieta).begin();  
-      end2_   = jetEtaNeg.at(ieta).end();
-      BitonicSort<l1t::Jet>(down, start2_, end2_);
-      etaNegSorter.Merge( jetEtaNeg.at(ieta) , accumEtaNeg );
-      
+
+      if(ieta < 25){
+	start2_ = jetEtaPosBar.at(ieta).begin();  
+	end2_   = jetEtaPosBar.at(ieta).end();
+	BitonicSort<l1t::Jet>(down, start2_, end2_);
+	etaPosSorterBar.Merge( jetEtaPosBar.at(ieta) , accumEtaPosBar );
+
+	start2_ = jetEtaNegBar.at(ieta).begin();  
+	end2_   = jetEtaNegBar.at(ieta).end();
+	BitonicSort<l1t::Jet>(down, start2_, end2_);
+	etaNegSorterBar.Merge( jetEtaNegBar.at(ieta) , accumEtaNegBar );
+      }
+      else{
+	start2_ = jetEtaPosEnd.at(ieta).begin();  
+	end2_   = jetEtaPosEnd.at(ieta).end();
+	BitonicSort<l1t::Jet>(down, start2_, end2_);
+	etaPosSorterEnd.Merge( jetEtaPosEnd.at(ieta) , accumEtaPosEnd );
+
+	start2_ = jetEtaNegEnd.at(ieta).begin();  
+	end2_   = jetEtaNegEnd.at(ieta).end();
+	BitonicSort<l1t::Jet>(down, start2_, end2_);
+	etaNegSorterEnd.Merge( jetEtaNegEnd.at(ieta) , accumEtaNegEnd );
+      }
     }
 
   //check for 6 & 7th jets with same et and eta. Keep jet with larger phi
   
-  if(accumEtaPos.at(6).hwPt()==accumEtaPos.at(5).hwPt() && accumEtaPos.at(6).hwEta()==accumEtaPos.at(5).hwEta()
-     && accumEtaPos.at(6).hwPhi() > accumEtaPos.at(5).hwPhi()){
-    accumEtaPos.at(5)=accumEtaPos.at(6);
+  if(accumEtaPosBar.at(3).hwPt()==accumEtaPosBar.at(2).hwPt() && accumEtaPosBar.at(3).hwEta()==accumEtaPosBar.at(2).hwEta()
+     && accumEtaPosBar.at(3).hwPhi() > accumEtaPosBar.at(2).hwPhi()){
+    accumEtaPosBar.at(2)=accumEtaPosBar.at(3);
   }
-  if(accumEtaNeg.at(6).hwPt()==accumEtaNeg.at(5).hwPt() && accumEtaNeg.at(6).hwEta()==accumEtaNeg.at(5).hwEta()
-     && accumEtaNeg.at(6).hwPhi() > accumEtaNeg.at(5).hwPhi()){
-    accumEtaNeg.at(5)=accumEtaNeg.at(6);
+
+  if(accumEtaPosEnd.at(3).hwPt()==accumEtaPosEnd.at(2).hwPt() && accumEtaPosEnd.at(3).hwEta()==accumEtaPosEnd.at(2).hwEta()
+     && accumEtaPosEnd.at(3).hwPhi() > accumEtaPosEnd.at(2).hwPhi()){
+    accumEtaPosEnd.at(2)=accumEtaPosEnd.at(3);
   }
-  
+
+  if(accumEtaNegBar.at(3).hwPt()==accumEtaNegBar.at(2).hwPt() && accumEtaNegBar.at(3).hwEta()==accumEtaNegBar.at(2).hwEta()
+     && accumEtaNegBar.at(3).hwPhi() > accumEtaNegBar.at(2).hwPhi()){
+    accumEtaNegBar.at(2)=accumEtaNegBar.at(3);
+  }
+
+  if(accumEtaNegEnd.at(3).hwPt()==accumEtaNegEnd.at(2).hwPt() && accumEtaNegEnd.at(3).hwEta()==accumEtaNegEnd.at(2).hwEta()
+     && accumEtaNegEnd.at(3).hwPhi() > accumEtaNegEnd.at(2).hwPhi()){
+    accumEtaNegEnd.at(2)=accumEtaNegEnd.at(3);
+  }
+
   //truncate
-  accumEtaPos.resize(6);
-  accumEtaNeg.resize(6);
+  accumEtaPosBar.resize(3);
+  accumEtaPosEnd.resize(3);
+  accumEtaNegBar.resize(3);
+  accumEtaNegEnd.resize(3);
   //Rework for more jets
   //  accumEtaPos.resize(24);
   //  accumEtaNeg.resize(24);
 
   // put all 12 candidates in the original jet vector, removing zero energy ones
   jets.clear();
-  for (l1t::Jet accjet : accumEtaPos)
+  for (l1t::Jet accjet : accumEtaPosBar)
     {
       if (accjet.hwPt() > 0) jets.push_back(accjet);
     }
-  for (l1t::Jet accjet : accumEtaNeg)
+  for (l1t::Jet accjet : accumEtaPosEnd)
     {
       if (accjet.hwPt() > 0) jets.push_back(accjet);
     }
-  
-   
+  for (l1t::Jet accjet : accumEtaNegBar)
+    {
+      if (accjet.hwPt() > 0) jets.push_back(accjet);
+    }
+
+  for (l1t::Jet accjet : accumEtaNegEnd)
+    {
+      if (accjet.hwPt() > 0) jets.push_back(accjet);
+    }  
 }
 
 
