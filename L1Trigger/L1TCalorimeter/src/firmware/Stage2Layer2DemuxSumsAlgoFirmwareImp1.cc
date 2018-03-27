@@ -33,6 +33,7 @@ void l1t::Stage2Layer2DemuxSumsAlgoFirmwareImp1::processEvent(const std::vector<
   unsigned int met(0), metHF(0), mht(0), mhtHF(0);
   unsigned int mbp0(0), mbm0(0), mbp1(0), mbm1(0);
   unsigned int ntow(0);
+  int etimb(0);
 
   bool metSat(0), metHFSat(0), mhtSat(0), mhtHFSat(0);
 
@@ -166,6 +167,9 @@ void l1t::Stage2Layer2DemuxSumsAlgoFirmwareImp1::processEvent(const std::vector<
   if(mhtSat) mht=0xFFF;
   if(mhtHFSat) mhtHF=0xFFF;
 
+  //Final ett imbalance calculation
+  if(et>0) etimb = (etPos-etNeg)*100/et;
+
   // Make final collection
   math::XYZTLorentzVector p4;
 
@@ -183,6 +187,7 @@ void l1t::Stage2Layer2DemuxSumsAlgoFirmwareImp1::processEvent(const std::vector<
   l1t::EtSum etSumTowCount(p4,l1t::EtSum::EtSumType::kTowerCount,ntow,0,0,0);
   l1t::EtSum etSumTotalEtPos(p4,l1t::EtSum::EtSumType::kTotalEtPos,etPos,0,0,0);
   l1t::EtSum etSumTotalEtNeg(p4,l1t::EtSum::EtSumType::kTotalEtNeg,etNeg,0,0,0);
+  l1t::EtSum etSumEtImb(p4,l1t::EtSum::EtSumType::kEtImb,etimb,0,0,0);
 
   outputSums.push_back(etSumTotalEt);
   outputSums.push_back(etSumTotalEtEm);
@@ -198,5 +203,6 @@ void l1t::Stage2Layer2DemuxSumsAlgoFirmwareImp1::processEvent(const std::vector<
   outputSums.push_back(etSumTowCount);
   outputSums.push_back(etSumTotalEtPos);
   outputSums.push_back(etSumTotalEtNeg);
+  outputSums.push_back(etSumEtImb);
 
 }
